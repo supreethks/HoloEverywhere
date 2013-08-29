@@ -1,27 +1,27 @@
 
 package org.holoeverywhere.app;
 
-import org.holoeverywhere.app.TabSwipeInterface.TabInfo;
+import org.holoeverywhere.app.TabSwipeInterface.ITabInfo;
 
 import android.os.Bundle;
 
-public interface TabSwipeInterface<T extends TabInfo> {
-    public static interface OnTabSelectedListener {
-        public void onTabSelected(int position);
-    }
-
-    public static interface TabInfo {
+public interface TabSwipeInterface<T extends ITabInfo<T>> {
+    public static interface ITabInfo<T extends ITabInfo<T>> {
         public Bundle getFragmentArguments();
 
         public Class<? extends Fragment> getFragmentClass();
 
         public CharSequence getTitle();
 
-        public void setFragmentArguments(Bundle fragmentArguments);
+        public T setFragmentArguments(Bundle fragmentArguments);
 
-        public void setFragmentClass(Class<? extends Fragment> fragmentClass);
+        public T setFragmentClass(Class<? extends Fragment> fragmentClass);
 
-        public void setTitle(CharSequence title);
+        public T setTitle(CharSequence title);
+    }
+
+    public static interface OnTabSelectedListener {
+        public void onTabSelected(int position);
     }
 
     public T addTab(CharSequence title, Class<? extends Fragment> fragmentClass);
@@ -42,6 +42,8 @@ public interface TabSwipeInterface<T extends TabInfo> {
 
     public boolean isSmoothScroll();
 
+    public boolean isSwipeEnabled();
+
     public void reloadTabs();
 
     public void removeAllTabs();
@@ -52,9 +54,9 @@ public interface TabSwipeInterface<T extends TabInfo> {
 
     public void setCurrentTab(int position);
 
-    public void setCustomLayout(int customLayout);
-
     public void setOnTabSelectedListener(OnTabSelectedListener onTabSelectedListener);
 
     public void setSmoothScroll(boolean smoothScroll);
+
+    public void setSwipeEnabled(boolean swipeEnabled);
 }

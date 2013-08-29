@@ -5,7 +5,7 @@
 	<groupId>org.holoeverywhere</groupId>
 	<artifactId>parent</artifactId>
 	<packaging>pom</packaging>
-	<version>1.6.2-SNAPSHOT</version>
+	<version>1.6.9-SNAPSHOT</version>
 
 	<parent>
 		<groupId>org.sonatype.oss</groupId>
@@ -102,7 +102,7 @@
 		<noa.version>2.4.0</noa.version>
 		<junit.version>4.8.1</junit.version>
 		<android.version>4.1.1.4</android.version>
-		<android-support.version>r13</android-support.version>
+		<android-support.version>r18.1</android-support.version>
 		<android.sdk.platform>16</android.sdk.platform>
 
 		<github.downloads.repositoryOwner>Prototik</github.downloads.repositoryOwner>
@@ -161,7 +161,7 @@
 				<plugin>
 					<groupId>org.holoeverywhere</groupId>
 					<artifactId>resbuilder</artifactId>
-					<version>2.1.0</version>
+					<version>2.1.1</version>
 					<inherited>true</inherited>
 					<executions>
 						<execution>
@@ -201,8 +201,7 @@
 					<version>2.4.1</version>
 					<configuration>
 						<autoVersionSubmodules>true</autoVersionSubmodules>
-						<tagNameFormat>holoeverywhere-@{project.version}</tagNameFormat>
-						<scmCommentPrefix>Release: </scmCommentPrefix>
+						<tagNameFormat>v@{project.version}</tagNameFormat>
 					</configuration>
 				</plugin>
 

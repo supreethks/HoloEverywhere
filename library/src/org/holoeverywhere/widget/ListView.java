@@ -9,6 +9,7 @@ import org.holoeverywhere.HoloEverywhere;
 import org.holoeverywhere.R;
 import org.holoeverywhere.app.Activity;
 import org.holoeverywhere.drawable.DrawableCompat;
+import org.holoeverywhere.widget.FastScroller.FastScrollerCallback;
 import org.holoeverywhere.widget.HeaderViewListAdapter.ViewInfo;
 import org.holoeverywhere.widget.ListAdapterWrapper.ListAdapterCallback;
 
@@ -45,7 +46,7 @@ import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuItem;
 
 public class ListView extends android.widget.ListView implements OnWindowFocusChangeListener,
-        ContextMenuInfoGetter {
+        ContextMenuInfoGetter, FastScrollerCallback {
     public interface MultiChoiceModeListener extends ActionMode.Callback {
         public void onItemCheckedStateChanged(ActionMode mode, int position,
                 long id, boolean checked);
@@ -181,7 +182,7 @@ public class ListView extends android.widget.ListView implements OnWindowFocusCh
     private int mChoiceMode;
     private ContextMenuInfo mContextMenuInfo;
     private boolean mFastScrollEnabled;
-    private FastScroller mFastScroller;
+    private FastScroller<ListView> mFastScroller;
     private final List<ViewInfo> mFooterViewInfos = new ArrayList<ViewInfo>(),
             mHeaderViewInfos = new ArrayList<ViewInfo>();
     private boolean mForceFastScrollAlwaysVisibleDisable = false;
@@ -241,22 +242,12 @@ public class ListView extends android.widget.ListView implements OnWindowFocusCh
         }
         super.setFastScrollEnabled(false);
         super.setChoiceMode(CHOICE_MODE_NONE);
-        TypedArray a = context.obtainStyledAttributes(attrs, new int[] {
-                android.R.attr.fastScrollEnabled,
-                android.R.attr.fastScrollAlwaysVisible,
-                android.R.attr.choiceMode,
-                android.R.attr.overScrollFooter,
-                android.R.attr.overScrollHeader
-        }, defStyle, R.style.Holo_ListView);
-        setFastScrollEnabled(a.getBoolean(0, false));
-        setFastScrollAlwaysVisible(a.getBoolean(1, false));
-        setChoiceMode(a.getInt(2, CHOICE_MODE_NONE));
-        if (!a.hasValue(3) && VERSION.SDK_INT >= VERSION_CODES.GINGERBREAD) {
-            super.setOverscrollFooter(null);
-        }
-        if (!a.hasValue(4) && VERSION.SDK_INT >= VERSION_CODES.GINGERBREAD) {
-            super.setOverscrollHeader(null);
-        }
+        TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.AbsListView,
+                defStyle, R.style.Holo_ListView);
+        setFastScrollEnabled(a.getBoolean(R.styleable.AbsListView_android_fastScrollEnabled, false));
+        setFastScrollAlwaysVisible(a.getBoolean(
+                R.styleable.AbsListView_android_fastScrollAlwaysVisible, false));
+        setChoiceMode(a.getInt(R.styleable.AbsListView_android_choiceMode, CHOICE_MODE_NONE));
         a.recycle();
     }
 
@@ -444,6 +435,7 @@ public class ListView extends android.widget.ListView implements OnWindowFocusCh
         onScrollChanged(0, 0, 0, 0);
     }
 
+    @Override
     public boolean isAttached() {
         return mIsAttached;
     }
@@ -466,6 +458,7 @@ public class ListView extends android.widget.ListView implements OnWindowFocusCh
         return mForceHeaderListAdapter;
     }
 
+    @Override
     @SuppressLint("NewApi")
     public boolean isInScrollingContainer() {
         ViewParent p = getParent();
@@ -772,7 +765,8 @@ public class ListView extends android.widget.ListView implements OnWindowFocusCh
         }
     }
 
-    protected void reportScrollStateChange(int newState) {
+    @Override
+    public void reportScrollStateChange(int newState) {
         if (newState != mLastScrollState) {
             if (mOnScrollListener != null) {
                 mLastScrollState = newState;
@@ -863,7 +857,7 @@ public class ListView extends android.widget.ListView implements OnWindowFocusCh
         mFastScrollEnabled = enabled;
         if (enabled) {
             if (mFastScroller == null) {
-                mFastScroller = new FastScroller(getContext(), this);
+                mFastScroller = new FastScroller<ListView>(getContext(), this);
             }
         } else {
             if (mFastScroller != null) {

@@ -8,7 +8,6 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.Collection;
 
-import org.holoeverywhere.FontLoader;
 import org.holoeverywhere.ThemeManager;
 import org.holoeverywhere.addon.AddonSherlock;
 import org.holoeverywhere.addon.AddonSherlock.AddonSherlockA;
@@ -29,8 +28,6 @@ import com.actionbarsherlock.app.ActionBar;
 import com.actionbarsherlock.internal.view.menu.MenuItemWrapper;
 import com.actionbarsherlock.internal.view.menu.MenuWrapper;
 import com.actionbarsherlock.view.ActionMode;
-import com.actionbarsherlock.view.Menu;
-import com.actionbarsherlock.view.MenuItem;
 
 public abstract class Activity extends _HoloActivity {
     @Retention(RetentionPolicy.RUNTIME)
@@ -51,7 +48,7 @@ public abstract class Activity extends _HoloActivity {
 
         @Override
         public boolean post() {
-            return (mView = Activity.super.findViewById(mId)) != null;
+            return (mView = getWindow().findViewById(mId)) != null;
         }
     }
 
@@ -77,11 +74,11 @@ public abstract class Activity extends _HoloActivity {
      */
     @Deprecated
     public static final String ADDON_SLIDING_MENU = ADDON_SLIDER;
+    public static final String ADDON_TABBER = "Tabber";
     private final IAddonBasicAttacher<IAddonActivity, Activity> mAttacher =
             new IAddonBasicAttacher<IAddonActivity, Activity>(this);
     private boolean mCreatedByThemeManager = false;
     private final FindViewAction mFindViewAction = new FindViewAction();
-    private boolean mFirstRun = true;
     private final KeyEventAction mKeyEventAction = new KeyEventAction();
 
     @Override
@@ -157,10 +154,6 @@ public abstract class Activity extends _HoloActivity {
         return mCreatedByThemeManager;
     }
 
-    public boolean isFirstRun() {
-        return mFirstRun;
-    }
-
     @Override
     public void lockAttaching() {
         mAttacher.lockAttaching();
@@ -211,18 +204,13 @@ public abstract class Activity extends _HoloActivity {
                 addon.onContentChanged();
             }
         });
-        FontLoader.apply(getWindow().getDecorView());
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        mFirstRun = savedInstanceState == null;
         final Bundle state = instanceState(savedInstanceState);
         mCreatedByThemeManager = getIntent().getBooleanExtra(
                 ThemeManager.KEY_CREATED_BY_THEME_MANAGER, false);
-        if (mCreatedByThemeManager) {
-            mFirstRun = false;
-        }
         mAttacher.inhert(getSupportApplication());
         forceInit(state);
         performAddonAction(new AddonCallback<IAddonActivity>() {
@@ -243,11 +231,6 @@ public abstract class Activity extends _HoloActivity {
     @Override
     public final boolean onCreateOptionsMenu(android.view.Menu menu) {
         return onCreateOptionsMenu(new MenuWrapper(menu));
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        return true;
     }
 
     @Override
@@ -274,6 +257,21 @@ public abstract class Activity extends _HoloActivity {
             }
         });
         super.onDestroy();
+    }
+
+    @Override
+    public boolean onHomePressed() {
+        return performAddonAction(new AddonCallback<IAddonActivity>() {
+            @Override
+            public boolean action(IAddonActivity addon) {
+                return addon.onHomePressed();
+            }
+
+            @Override
+            public boolean post() {
+                return Activity.super.onHomePressed();
+            }
+        });
     }
 
     @Override
@@ -321,11 +319,6 @@ public abstract class Activity extends _HoloActivity {
     @Override
     public final boolean onOptionsItemSelected(android.view.MenuItem item) {
         return onOptionsItemSelected(new MenuItemWrapper(item));
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        return false;
     }
 
     @Override
@@ -388,6 +381,8 @@ public abstract class Activity extends _HoloActivity {
                     config.requireSlider = true;
                 } else if (ADDON_ROBOGUICE.equals(addon)) {
                     config.requireRoboguice = true;
+                } else if (ADDON_TABBER.equals(addon)) {
+                    config.requireTabber = true;
                 } else {
                     addon(addon);
                 }
@@ -398,11 +393,6 @@ public abstract class Activity extends _HoloActivity {
     @Override
     public final boolean onPrepareOptionsMenu(android.view.Menu menu) {
         return onPrepareOptionsMenu(new MenuWrapper(menu));
-    }
-
-    @Override
-    public boolean onPrepareOptionsMenu(Menu menu) {
-        return true;
     }
 
     @Override
@@ -509,10 +499,7 @@ public abstract class Activity extends _HoloActivity {
 
     @Override
     public void requestWindowFeature(long featureIdLong) {
-        if (!super.isInited()) {
-            super.requestWindowFeature(featureIdLong);
-            return;
-        }
+        super.requestWindowFeature(featureIdLong);
         final int featureId = (int) featureIdLong;
         performAddonAction(new AddonCallback<IAddonActivity>() {
             @Override

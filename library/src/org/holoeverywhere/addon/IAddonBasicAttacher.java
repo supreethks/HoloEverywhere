@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -30,7 +31,8 @@ public final class IAddonBasicAttacher<V extends IAddonBase<Z>, Z> implements IA
     }
 
     private final Map<Class<? extends IAddon>, V> mAddons = new HashMap<Class<? extends IAddon>, V>();
-    private final Set<V> mAddonsList = new TreeSet<V>(new AddonComparator());
+    private List<V> mAddonsList;
+    private final Set<V> mAddonsSet = new TreeSet<V>(new AddonComparator());
     private boolean mLockAttaching = false;
     private Z mObject;
 
@@ -39,36 +41,81 @@ public final class IAddonBasicAttacher<V extends IAddonBase<Z>, Z> implements IA
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <T extends V> T addon(Class<? extends IAddon> clazz) {
+        return addon(clazz, true);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T extends V> T addon(Class<? extends IAddon> clazz, boolean checkConflicts) {
         T addon = (T) mAddons.get(clazz);
         if (addon == null) {
             if (mLockAttaching) {
-                throw new AttachException(mObject, clazz);
+                throw AttachException.afterInit(mObject, clazz);
             }
             addon = IAddon.obtain(clazz, mObject);
             if (addon == null) {
                 return null;
             }
             mAddons.put(clazz, addon);
-            mAddonsList.add(addon);
+            mAddonsSet.add(addon);
+            mAddonsList = null;
+            if (checkConflicts) {
+                checkConflicts();
+            }
         }
         return addon;
     }
 
     @Override
     public void addon(Collection<Class<? extends IAddon>> classes) {
-        if (classes == null) {
+        if (classes == null || classes.size() == 0) {
             return;
         }
         for (Class<? extends IAddon> clazz : classes) {
-            addon(clazz);
+            addon(clazz, false);
         }
+        checkConflicts();
     }
 
     @Override
     public <T extends V> T addon(String classname) {
         return addon(IAddon.makeAddonClass(classname));
+    }
+
+    private void checkConflicts() {
+        Set<String> attachedAddons = new HashSet<String>();
+        Map<String, String> conflictAddons = new HashMap<String, String>();
+        for (V addon : mAddonsSet) {
+            Class<? extends IAddon> clazz = addon.getParent().getClass();
+            final String clazzName = clazz.getName();
+            attachedAddons.add(clazzName);
+            if (!clazz.isAnnotationPresent(Addon.class)) {
+                continue;
+            }
+            Addon addonMeta = clazz.getAnnotation(Addon.class);
+            for (String a : addonMeta.conflictStrings()) {
+                conflictAddons.put(a, clazzName);
+            }
+            for (Class<? extends IAddon> a : addonMeta.conflict()) {
+                conflictAddons.put(a.getName(), clazzName);
+            }
+        }
+        StringBuilder builder = null;
+        for (String addon : conflictAddons.keySet()) {
+            if (attachedAddons.contains(addon)) {
+                if (builder == null) {
+                    builder = new StringBuilder();
+                } else {
+                    builder.append('\n');
+                }
+                builder.append(String.format(
+                        "Found addon conflict: %s is cannot be attached together with %s",
+                        addon, conflictAddons.get(addon)));
+            }
+        }
+        if (builder != null) {
+            throw AttachException.conflict(builder.toString());
+        }
     }
 
     public void inhert(Collection<Class<? extends IAddon>> sourceClasses) {
@@ -109,15 +156,16 @@ public final class IAddonBasicAttacher<V extends IAddonBase<Z>, Z> implements IA
 
     @Override
     public boolean performAddonAction(AddonCallback<V> callback) {
-        if (mAddons.size() == 0) {
-            return false;
+        if (mAddonsSet.size() == 0) {
+            return callback.post();
         }
-        callback.pre();
-        boolean result = false;
-        for (V addon : mAddonsList) {
-            result = callback.performAction(addon);
-            if (callback.mStopped) {
-                return result;
+        if (mAddonsList == null) {
+            mAddonsList = new ArrayList<V>(mAddonsSet);
+        }
+        final int addonCount = mAddonsList.size();
+        for (int i = 0; i < addonCount; i++) {
+            if (callback.action(mAddonsList.get(i))) {
+                return true;
             }
         }
         return callback.post();
@@ -125,7 +173,8 @@ public final class IAddonBasicAttacher<V extends IAddonBase<Z>, Z> implements IA
 
     public void reset() {
         mAddons.clear();
-        mAddonsList.clear();
+        mAddonsSet.clear();
+        mAddonsList = null;
         mLockAttaching = false;
     }
 }

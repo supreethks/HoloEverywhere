@@ -10,6 +10,7 @@ import org.holoeverywhere.demo.fragments.dialogs.DialogsFragment;
 import org.holoeverywhere.demo.fragments.lists.ListsFragment;
 import org.holoeverywhere.demo.fragments.menus.MenusFragments;
 import org.holoeverywhere.demo.fragments.pickers.PickersFragment;
+import org.holoeverywhere.demo.fragments.tabber.TabsFragment;
 import org.holoeverywhere.demo.widget.DemoAdapter;
 import org.holoeverywhere.demo.widget.DemoItem;
 import org.holoeverywhere.widget.ListView;
@@ -50,8 +51,8 @@ public class OtherFragment extends ListFragment {
             if (fragment instanceof DialogFragment) {
                 ((DialogFragment) fragment).show(getSupportActivity());
             } else {
-                ((DemoActivity) getSupportActivity()).replaceFragment(fragment,
-                        "fragment-" + mClass.getName());
+                ((DemoActivity) getSupportActivity()).addonSlider()
+                        .obtainSliderMenu().replaceFragment(fragment);
             }
         }
     }
@@ -133,8 +134,9 @@ public class OtherFragment extends ListFragment {
         addItem("Dialogs", DialogsFragment.class);
         addItem("Pickers", PickersFragment.class);
         addItem("Menus", MenusFragments.class);
+        addItem("Font Palette", FontPalette.class);
         addItem("Calendar", CalendarFragment.class);
-        addItem("Tabs + Swipe", TabsFragment.class);
+        addItem("Addon: Tabber", TabsFragment.class);
     }
 
     protected void onPrepareListView(ListView list) {

@@ -2,12 +2,12 @@
 package org.holoeverywhere.addon;
 
 import org.holoeverywhere.addon.IAddon.Addon;
-import org.holoeverywhere.app.Activity;
 import org.holoeverywhere.slider.R;
 import org.holoeverywhere.slider.SliderMenu;
 import org.holoeverywhere.widget.DrawerLayout;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.v4.widget.DrawerLayout.DrawerListener;
@@ -23,6 +23,8 @@ public class AddonSlider extends IAddon {
     public static class AddonSliderA extends IAddonActivity {
         private boolean mAddonEnabled = true;
         private DrawerLayout mDrawerLayout;
+        private Context mMenuContext;
+        private int mMenuLayout;
         private boolean mOverlayActionBar = false;
         private SliderMenu mSliderMenu;
 
@@ -101,6 +103,14 @@ public class AddonSlider extends IAddon {
             return get().findViewById(R.id.leftView);
         }
 
+        public Context getMenuContext() {
+            return mMenuContext;
+        }
+
+        public int getMenuLayout() {
+            return mMenuLayout;
+        }
+
         public View getRightView() {
             return get().findViewById(R.id.rightView);
         }
@@ -129,11 +139,37 @@ public class AddonSlider extends IAddon {
             return mOverlayActionBar;
         }
 
+        public SliderMenu obtainDefaultSliderMenu() {
+            return obtainDefaultSliderMenu(0);
+        }
+
+        public SliderMenu obtainDefaultSliderMenu(int menuLayout) {
+            if (mSliderMenu != null) {
+                return mSliderMenu;
+            }
+            mMenuLayout = menuLayout;
+            mMenuContext = get().getSupportActionBarContext();
+            setDrawerLayout(R.layout.slider_default_layout);
+            setOverlayActionBar(true);
+            mSliderMenu = new SliderMenu(this);
+            mSliderMenu.setHandleHomeKey(true);
+            mSliderMenu.makeDefaultMenu(mMenuContext);
+            return mSliderMenu;
+        }
+
         public SliderMenu obtainSliderMenu() {
             if (mSliderMenu == null) {
                 mSliderMenu = new SliderMenu(this);
             }
             return mSliderMenu;
+        }
+
+        @Override
+        public boolean onHomePressed() {
+            if (mSliderMenu != null) {
+                return mSliderMenu.onHomePressed();
+            }
+            return super.onHomePressed();
         }
 
         @SuppressLint("NewApi")
@@ -321,6 +357,6 @@ public class AddonSlider extends IAddon {
     }
 
     public AddonSlider() {
-        register(Activity.class, AddonSliderA.class);
+        registerActivity(AddonSliderA.class);
     }
 }

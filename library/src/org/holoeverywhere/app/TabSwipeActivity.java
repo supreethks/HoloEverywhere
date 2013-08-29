@@ -1,8 +1,10 @@
 
 package org.holoeverywhere.app;
 
-import org.holoeverywhere.R;
-import org.holoeverywhere.widget.FrameLayout;
+import org.holoeverywhere.addon.AddonTabber;
+import org.holoeverywhere.addon.AddonTabber.AddonTabberA;
+import org.holoeverywhere.addon.AddonTabber.AddonTabberCallback;
+import org.holoeverywhere.app.TabSwipeController.TabInfo;
 
 import android.os.Bundle;
 
@@ -11,141 +13,108 @@ import android.os.Bundle;
  * <br />
  * Part of HoloEverywhere
  */
-public abstract class TabSwipeActivity extends Activity implements
-        TabSwipeInterface<TabSwipeFragment.TabInfo> {
-    public static class InnerFragment extends TabSwipeFragment {
-        private TabSwipeActivity mActivity;
-        private boolean mTabsWasHandled = false;
+public abstract class TabSwipeActivity extends Activity
+        implements TabSwipeInterface<TabInfo>, AddonTabberCallback {
+    private AddonTabberA mTabber;
 
-        @Override
-        protected void onHandleTabs() {
-            mTabsWasHandled = true;
-            if (mActivity != null) {
-                mActivity.onHandleTabs();
-            }
+    protected AddonTabberA addonTabber() {
+        if (mTabber == null) {
+            mTabber = addon(AddonTabber.class);
         }
-
-        public void setActivity(TabSwipeActivity activity) {
-            if (activity == null) {
-                return;
-            }
-            mActivity = activity;
-            if (mTabsWasHandled) {
-                mActivity.onHandleTabs();
-            }
-        }
-    }
-
-    private int mCustomLayout = -1;
-
-    private InnerFragment mFragment;
-
-    @Override
-    public TabSwipeFragment.TabInfo addTab(CharSequence title,
-            Class<? extends Fragment> fragmentClass) {
-        return mFragment.addTab(title, fragmentClass);
+        return mTabber;
     }
 
     @Override
-    public TabSwipeFragment.TabInfo addTab(CharSequence title,
-            Class<? extends Fragment> fragmentClass, Bundle fragmentArguments) {
-        return mFragment.addTab(title, fragmentClass, fragmentArguments);
+    public TabInfo addTab(CharSequence title, Class<? extends Fragment> fragmentClass) {
+        return addonTabber().addTab(title, fragmentClass);
     }
 
     @Override
-    public TabSwipeFragment.TabInfo addTab(int title,
-            Class<? extends Fragment> fragmentClass) {
-        return mFragment.addTab(title, fragmentClass);
+    public TabInfo addTab(CharSequence title, Class<? extends Fragment> fragmentClass,
+            Bundle fragmentArguments) {
+        return addonTabber().addTab(title, fragmentClass, fragmentArguments);
     }
 
     @Override
-    public TabSwipeFragment.TabInfo addTab(int title,
-            Class<? extends Fragment> fragmentClass, Bundle fragmentArguments) {
-        return mFragment.addTab(title, fragmentClass, fragmentArguments);
+    public TabInfo addTab(int title, Class<? extends Fragment> fragmentClass) {
+        return addonTabber().addTab(title, fragmentClass);
     }
 
     @Override
-    public TabSwipeFragment.TabInfo addTab(
-            TabSwipeFragment.TabInfo tabInfo) {
-        return mFragment.addTab(tabInfo);
+    public TabInfo addTab(int title, Class<? extends Fragment> fragmentClass,
+            Bundle fragmentArguments) {
+        return addonTabber().addTab(title, fragmentClass, fragmentArguments);
     }
 
     @Override
-    public TabSwipeFragment.TabInfo addTab(
-            TabSwipeFragment.TabInfo tabInfo, int position) {
-        return mFragment.addTab(tabInfo, position);
+    public TabInfo addTab(TabInfo tabInfo) {
+        return addonTabber().addTab(tabInfo);
+    }
+
+    @Override
+    public TabInfo addTab(TabInfo tabInfo, int position) {
+        return addonTabber().addTab(tabInfo, position);
     }
 
     @Override
     public OnTabSelectedListener getOnTabSelectedListener() {
-        return mFragment.getOnTabSelectedListener();
+        return addonTabber().getOnTabSelectedListener();
     }
 
     @Override
     public boolean isSmoothScroll() {
-        return mFragment.isSmoothScroll();
+        return addonTabber().isSmoothScroll();
     }
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        FrameLayout layout = new FrameLayout(this);
-        layout.setId(R.id.contentPanel);
-        setContentView(layout);
-        mFragment = (InnerFragment) getSupportFragmentManager().findFragmentById(R.id.contentPanel);
-        if (mFragment == null) {
-            getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.contentPanel, mFragment = new InnerFragment()).commit();
-        }
-        mFragment.setActivity(this);
-        if (mCustomLayout > 0) {
-            mFragment.setCustomLayout(mCustomLayout);
-        }
+    public boolean isSwipeEnabled() {
+        return addonTabber().isSwipeEnabled();
     }
 
-    /**
-     * Add your tabs here
-     */
-    protected abstract void onHandleTabs();
+    @Override
+    protected Holo onCreateConfig(Bundle savedInstanceState) {
+        final Holo config = super.onCreateConfig(savedInstanceState);
+        config.requireTabber = true;
+        return config;
+    }
 
     @Override
     public void reloadTabs() {
-        mFragment.reloadTabs();
+        addonTabber().reloadTabs();
     }
 
     @Override
     public void removeAllTabs() {
-        mFragment.removeAllTabs();
+        addonTabber().removeAllTabs();
     }
 
     @Override
-    public TabSwipeFragment.TabInfo removeTab(int position) {
-        return mFragment.removeTab(position);
+    public TabInfo removeTab(int position) {
+        return addonTabber().removeTab(position);
     }
 
     @Override
-    public TabSwipeFragment.TabInfo removeTab(
-            TabSwipeFragment.TabInfo tabInfo) {
-        return mFragment.removeTab(tabInfo);
+    public TabInfo removeTab(TabInfo tabInfo) {
+        return addonTabber().removeTab(tabInfo);
     }
 
     @Override
     public void setCurrentTab(int position) {
-        mFragment.setCurrentTab(position);
-    }
-
-    @Override
-    public void setCustomLayout(int customLayout) {
-        mCustomLayout = customLayout;
+        addonTabber().setCurrentTab(position);
     }
 
     @Override
     public void setOnTabSelectedListener(OnTabSelectedListener onTabSelectedListener) {
-        mFragment.setOnTabSelectedListener(onTabSelectedListener);
+        addonTabber().setOnTabSelectedListener(onTabSelectedListener);
     }
 
     @Override
     public void setSmoothScroll(boolean smoothScroll) {
-        mFragment.setSmoothScroll(smoothScroll);
+        addonTabber().setSmoothScroll(smoothScroll);
+    }
+
+    @Override
+    public void setSwipeEnabled(boolean swipeEnabled) {
+        addonTabber().setSwipeEnabled(swipeEnabled);
     }
 }
